@@ -1,0 +1,25 @@
+[Unit]
+Description=Shum APNs gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=shum-push
+Group=shum-push
+EnvironmentFile=/etc/shum-push/server.env
+ExecStart=/usr/local/bin/shum-push-server
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/shum-push
+CapabilityBoundingSet=
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+[Install]
+WantedBy=multi-user.target
+

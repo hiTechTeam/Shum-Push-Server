@@ -1,0 +1,8 @@
+.DS_Store
+.env
+*.p8
+*.key
+*.pem
+/bin/
+/data/
+
