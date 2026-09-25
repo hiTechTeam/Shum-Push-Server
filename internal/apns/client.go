@@ -27,14 +27,19 @@ type Notification struct {
 }
 
 type Client struct {
-	keyID    string
-	teamID   string
-	bundleID string
-	key      *ecdsa.PrivateKey
-	http     *http.Client
-	mu       sync.Mutex
-	jwt      string
-	jwtTime  time.Time
+	sandbox    *environmentClient
+	production *environmentClient
+	bundleID   string
+}
+
+type environmentClient struct {
+	keyID   string
+	teamID  string
+	key     *ecdsa.PrivateKey
+	http    *http.Client
+	mu      sync.Mutex
+	jwt     string
+	jwtTime time.Time
 }
 
 type Error struct {
@@ -47,7 +52,19 @@ func (e *Error) InvalidToken() bool {
 	return e.Status == http.StatusGone || e.Reason == "BadDeviceToken" || e.Reason == "DeviceTokenNotForTopic" || e.Reason == "Unregistered"
 }
 
-func New(keyID, teamID, bundleID, keyFile string) (*Client, error) {
+func New(sandboxKeyID, sandboxKeyFile, productionKeyID, productionKeyFile, teamID, bundleID string) (*Client, error) {
+	sandbox, err := newEnvironmentClient(sandboxKeyID, teamID, sandboxKeyFile)
+	if err != nil {
+		return nil, fmt.Errorf("configure sandbox APNs client: %w", err)
+	}
+	production, err := newEnvironmentClient(productionKeyID, teamID, productionKeyFile)
+	if err != nil {
+		return nil, fmt.Errorf("configure production APNs client: %w", err)
+	}
+	return &Client{sandbox: sandbox, production: production, bundleID: bundleID}, nil
+}
+
+func newEnvironmentClient(keyID, teamID, keyFile string) (*environmentClient, error) {
 	bytes, err := os.ReadFile(keyFile)
 	if err != nil {
 		return nil, fmt.Errorf("read APNs private key: %w", err)
@@ -66,8 +83,8 @@ func New(keyID, teamID, bundleID, keyFile string) (*Client, error) {
 	}
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.ForceAttemptHTTP2 = true
-	return &Client{
-		keyID: keyID, teamID: teamID, bundleID: bundleID, key: key,
+	return &environmentClient{
+		keyID: keyID, teamID: teamID, key: key,
 		http: &http.Client{Transport: transport, Timeout: 15 * time.Second},
 	}, nil
 }
@@ -86,14 +103,16 @@ func (c *Client) Send(ctx context.Context, device store.Device, notification Not
 		return err
 	}
 	host := "https://api.push.apple.com"
+	environment := c.production
 	if device.Environment == store.Sandbox {
 		host = "https://api.sandbox.push.apple.com"
+		environment = c.sandbox
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, host+"/3/device/"+device.Token, strings.NewReader(string(body)))
 	if err != nil {
 		return err
 	}
-	token, err := c.providerToken()
+	token, err := environment.providerToken()
 	if err != nil {
 		return err
 	}
@@ -105,7 +124,7 @@ func (c *Client) Send(ctx context.Context, device store.Device, notification Not
 	if notification.EventID != "" {
 		req.Header.Set("apns-collapse-id", notification.EventID)
 	}
-	response, err := c.http.Do(req)
+	response, err := environment.http.Do(req)
 	if err != nil {
 		return err
 	}
@@ -121,7 +140,7 @@ func (c *Client) Send(ctx context.Context, device store.Device, notification Not
 	return &Error{Status: response.StatusCode, Reason: failure.Reason}
 }
 
-func (c *Client) providerToken() (string, error) {
+func (c *environmentClient) providerToken() (string, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	now := time.Now()

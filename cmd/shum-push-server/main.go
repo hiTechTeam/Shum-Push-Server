@@ -29,7 +29,14 @@ func main() {
 	}
 	var push api.PushSender
 	if cfg.APNSConfigured() {
-		push, err = apns.New(cfg.APNSKeyID, cfg.APNSTeamID, cfg.APNSBundleID, cfg.APNSPrivateKeyFile)
+		push, err = apns.New(
+			cfg.APNSSandboxKeyID,
+			cfg.APNSSandboxPrivateKeyFile,
+			cfg.APNSProductionKeyID,
+			cfg.APNSProductionPrivateKeyFile,
+			cfg.APNSTeamID,
+			cfg.APNSBundleID,
+		)
 		if err != nil {
 			logger.Error("APNs client failed", "error", err)
 			os.Exit(1)

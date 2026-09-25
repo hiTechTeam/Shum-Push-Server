@@ -16,7 +16,7 @@ Write requests use Ed25519 headers `X-Shum-Public-Key`, `X-Shum-Timestamp`, `X-S
 
 ## Configuration
 
-Copy `deploy/server.env.example` to `/etc/shum-push/server.env`. APNs delivery requires an Apple `.p8` key, its Key ID, the Apple Developer Team ID, and the app bundle identifier.
+Copy `deploy/server.env.example` to `/etc/shum-push/server.env`. APNs delivery uses separate topic-specific `.p8` keys for Sandbox and Production, along with their Key IDs, the Apple Developer Team ID, and the app bundle identifier.
 
 The public endpoint should terminate HTTPS before forwarding traffic to this service. A Yandex API Gateway service domain can be used without buying a custom domain.
 
