@@ -259,21 +259,33 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 }
 
 type limiter struct {
-	mu       sync.Mutex
-	entries  map[string][]time.Time
-	limit    int
-	duration time.Duration
+	mu        sync.Mutex
+	entries   map[string][]time.Time
+	limit     int
+	duration  time.Duration
+	now       func() time.Time
+	lastSweep time.Time
 }
 
 func newLimiter(limit int, duration time.Duration) *limiter {
-	return &limiter{entries: map[string][]time.Time{}, limit: limit, duration: duration}
+	return &limiter{entries: map[string][]time.Time{}, limit: limit, duration: duration, now: time.Now}
 }
 
+// allow keeps a client key only while it has requests inside the window, so
+// client IP addresses do not outlive rate limiting.
 func (l *limiter) allow(key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	now := time.Now()
+	now := l.now()
 	cutoff := now.Add(-l.duration)
+	if !now.Before(l.lastSweep.Add(l.duration)) {
+		for entry, values := range l.entries {
+			if len(values) == 0 || !values[len(values)-1].After(cutoff) {
+				delete(l.entries, entry)
+			}
+		}
+		l.lastSweep = now
+	}
 	values := l.entries[key]
 	kept := values[:0]
 	for _, value := range values {
