@@ -17,11 +17,30 @@ The server stores only the mapping between a Shum identity and its APNs device t
 
 - `GET /healthz` checks the process.
 - `GET /readyz` checks whether APNs credentials are configured.
+- `GET /invite` serves a public contact invitation page.
 - `POST /v1/devices` registers an APNs token.
 - `DELETE /v1/devices` removes an APNs token.
 - `POST /v1/notifications` sends a generic notification without message content.
 
 Write requests use Ed25519 headers `X-Shum-Public-Key`, `X-Shum-Timestamp`, `X-Shum-Nonce`, and `X-Shum-Signature`. The signature covers the method, path, timestamp, nonce, and SHA-256 hash of the exact request body.
+
+## Contact links
+
+The iOS share action uses `https://<gateway-host>/invite#c2/<public-locator>`.
+The page opens the existing `shum://c2/<public-locator>` link when the visitor
+taps **Open in Shum**, and offers the existing TestFlight invitation for installation.
+This works with the gateway's HTTPS hostname; a separate domain is not required.
+It is a browser landing page, not an iOS Universal Link.
+
+The locator stays in the URL fragment and is not sent to the server in HTTP
+requests. The page has no analytics or external scripts. Its script accepts only
+the compact 32-byte locator and never redirects to a supplied arbitrary URL.
+QR codes keep their existing `shum://` format, so older scanners remain compatible.
+
+Forward `GET /invite` through the HTTPS gateway to this service. The existing
+`/{path+}` HTTP integration already covers it. Deploy the server before distributing
+an iOS build that generates the new links. Previously shared `shum://` links do not
+change automatically. Some embedded browsers may require opening the page in Safari.
 
 ## Configuration
 
@@ -33,6 +52,7 @@ The public endpoint should terminate HTTPS before forwarding traffic to this ser
 
 ```bash
 go test ./...
+node --test internal/api/invitation.test.cjs
 go run ./cmd/shum-push-server
 ```
 

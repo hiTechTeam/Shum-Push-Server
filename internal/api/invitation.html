@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Откройте приглашение и добавьте контакт в Shum.">
+  <title>Контакт Shum</title>
+  <style>
+    :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #101512; color: #f2f6f3; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100svh; display: grid; place-items: center; padding: 28px 20px; }
+    main { max-width: 430px; width: 100%; }
+    .brand { color: #a0ef99; letter-spacing: .12em; font-weight: 750; font-size: 22px; }
+    h1 { font-size: clamp(30px, 8vw, 40px); line-height: 1.12; margin: 32px 0 18px; }
+    p { color: #bac7be; line-height: 1.55; font-size: 16px; }
+    .actions { display: grid; gap: 12px; margin: 28px 0; }
+    a { text-decoration: none; border-radius: 14px; padding: 17px 20px; text-align: center; font-weight: 650; background: #a0ef99; color: #101512; }
+    a.secondary { background: #243129; color: #e3eee6; }
+    a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+    [hidden] { display: none !important; }
+    .hint { font-size: 14px; }
+    .privacy { border-top: 1px solid #304036; padding-top: 20px; margin-top: 30px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand">SHUM</div>
+    <h1 id="title">Контакт Shum</h1>
+    <p id="description">Откройте ссылку приглашения целиком, чтобы добавить контакт.</p>
+    <div class="actions">
+      <a id="open" hidden>Открыть в Shum</a>
+      <a id="install" class="secondary" href="https://testflight.apple.com/join/Z4pTvZcR" rel="noreferrer">Установить через TestFlight</a>
+    </div>
+    <p id="hint" class="hint">На iPhone установите Shum, создайте профиль, затем вернитесь к этой странице. Если кнопка не открывает приложение, откройте эту страницу в Safari.</p>
+    <p id="privacy" class="privacy">Эта страница не запрашивает доступ к вашей переписке и не добавляет контакт без вашего подтверждения в Shum.</p>
+    <noscript>Для открытия контакта разрешите JavaScript в браузере или отсканируйте QR-код внутри Shum.</noscript>
+  </main>
+  <script>/*SHUM_INVITATION_SCRIPT*/</script>
+</body>
+</html>

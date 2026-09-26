@@ -41,6 +41,7 @@ func New(devices *store.Store, push PushSender, gatewaySecret string, logger *sl
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /readyz", s.ready)
+	mux.HandleFunc("GET /invite", invitationPage)
 	mux.HandleFunc("POST /v1/devices", s.register)
 	mux.HandleFunc("DELETE /v1/devices", s.unregister)
 	mux.HandleFunc("POST /v1/notifications", s.notify)
