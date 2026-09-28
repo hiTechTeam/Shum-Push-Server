@@ -44,3 +44,19 @@ test('English instructions are available for other device languages', () => {
   assert.equal(result.document.documentElement.lang, 'en');
   assert.equal(result.elements.open.textContent, 'Open in Shum');
 });
+
+
+test('self-contained profiles open without requesting the profile from a server', () => {
+  const payload = Buffer.alloc(400, 3).toString('base64url');
+  for (const version of ['c3', 'c']) {
+    const result = page('#' + version + '/' + payload);
+    assert.equal(result.elements.open.href, 'shum://' + version + '/' + payload);
+    assert.equal(result.elements.open.hidden, false);
+  }
+});
+
+test('profile links reject excessive lengths and injected navigation', () => {
+  for (const hash of ['#c3/short', '#c3/' + 'A'.repeat(2049), '#c3/' + 'A'.repeat(400) + '?url=evil', '#c4/' + 'A'.repeat(400)]) {
+    assert.equal(page(hash).elements.open.href, undefined);
+  }
+});

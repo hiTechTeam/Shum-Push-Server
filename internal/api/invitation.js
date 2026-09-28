@@ -19,16 +19,19 @@
     document.getElementById("privacy").textContent = "This page does not request access to your conversations or add a contact without your confirmation in Shum.";
   }
   const update = () => {
-    // Only a 32-byte public locator is allowed. Never use an arbitrary URL
-    // from the fragment as a navigation target or insert it as HTML.
-    const match = /^#c2\/([A-Za-z0-9_-]{42}[AEIMQUYcgkosw048])$/.exec(window.location.hash);
+    // Allow only bounded base64url payloads in known app routes. The app
+    // decodes the card and verifies signatures before showing a profile.
+    const legacy = /^#c2\/([A-Za-z0-9_-]{42}[AEIMQUYcgkosw048])$/.exec(window.location.hash);
+    const profile = /^#(c3|c)\/([A-Za-z0-9_-]{200,2048})$/.exec(window.location.hash);
+    const target = legacy ? "shum://c2/" + legacy[1]
+      : profile ? "shum://" + profile[1] + "/" + profile[2] : null;
     const open = document.getElementById("open");
-    open.hidden = !match;
+    open.hidden = !target;
     open.removeAttribute("href");
     open.textContent = text.open;
     document.getElementById("title").textContent = text.title;
-    document.getElementById("description").textContent = match ? text.description : text.invalid;
-    if (match) open.href = "shum://c2/" + match[1];
+    document.getElementById("description").textContent = target ? text.description : text.invalid;
+    if (target) open.href = target;
   };
   update();
   window.addEventListener("hashchange", update);
