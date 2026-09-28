@@ -48,7 +48,7 @@ test('English instructions are available for other device languages', () => {
 
 test('self-contained profiles open without requesting the profile from a server', () => {
   const payload = Buffer.alloc(400, 3).toString('base64url');
-  for (const version of ['c3', 'c']) {
+  for (const version of ['c4', 'c3', 'c']) {
     const result = page('#' + version + '/' + payload);
     assert.equal(result.elements.open.href, 'shum://' + version + '/' + payload);
     assert.equal(result.elements.open.hidden, false);
@@ -56,7 +56,7 @@ test('self-contained profiles open without requesting the profile from a server'
 });
 
 test('profile links reject excessive lengths and injected navigation', () => {
-  for (const hash of ['#c3/short', '#c3/' + 'A'.repeat(2049), '#c3/' + 'A'.repeat(400) + '?url=evil', '#c4/' + 'A'.repeat(400)]) {
+  for (const hash of ['#c4/short', '#c3/short', '#c3/' + 'A'.repeat(2049), '#c3/' + 'A'.repeat(400) + '?url=evil', '#c5/' + 'A'.repeat(400)]) {
     assert.equal(page(hash).elements.open.href, undefined);
   }
 });

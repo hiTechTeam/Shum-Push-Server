@@ -22,7 +22,7 @@
     // Allow only bounded base64url payloads in known app routes. The app
     // decodes the card and verifies signatures before showing a profile.
     const legacy = /^#c2\/([A-Za-z0-9_-]{42}[AEIMQUYcgkosw048])$/.exec(window.location.hash);
-    const profile = /^#(c3|c)\/([A-Za-z0-9_-]{200,2048})$/.exec(window.location.hash);
+    const profile = /^#(c4|c3|c)\/([A-Za-z0-9_-]{200,2048})$/.exec(window.location.hash);
     const target = legacy ? "shum://c2/" + legacy[1]
       : profile ? "shum://" + profile[1] + "/" + profile[2] : null;
     const open = document.getElementById("open");
