@@ -26,8 +26,8 @@ Write requests use Ed25519 headers `X-Shum-Public-Key`, `X-Shum-Timestamp`, `X-S
 
 ## Contact links
 
-The iOS share action uses `https://<gateway-host>/invite#c3/<signed-profile>`.
-The page opens the self-contained `shum://c3/<signed-profile>` link when the visitor
+The iOS share action uses `https://<gateway-host>/invite#c4/<signed-profile>`.
+The page opens the self-contained `shum://c4/<signed-profile>` link when the visitor
 taps **Open in Shum**, and offers the existing TestFlight invitation for installation.
 This works with the gateway's HTTPS hostname; a separate domain is not required.
 It is a browser landing page, not an iOS Universal Link.
@@ -36,8 +36,10 @@ The public profile stays in the URL fragment and is not sent to the server in HT
 requests. The page has no analytics or external scripts. Its script accepts only
 bounded base64url data for supported invitation versions and never redirects to a supplied arbitrary URL.
 The app verifies the profile signature and renders the avatar locally from its seed.
-Legacy c2 locator links and c invitations remain supported.
-New c3 invitations require an iOS build with self-contained profile support.
+Legacy c2 locator, c and c3 invitations remain supported. The shared link and
+the QR code on the iOS profile screen both use c4: they carry the signed profile,
+keys, name and avatar seed, so the contact is added without any network lookup.
+New c4 invitations require an iOS build with self-contained profile support.
 
 Forward `GET /invite` through the HTTPS gateway to this service. The existing
 `/{path+}` HTTP integration already covers it. Deploy the server before distributing

@@ -93,7 +93,11 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	identityID, key, err := request.Card.Validate()
-	if err != nil || s.verifier.Verify(r, body, key) != nil {
+	if err == nil {
+		err = s.verifier.Verify(r, body, key)
+	}
+	if err != nil {
+		s.logger.Info("device registration rejected", "reason", err.Error())
 		writeError(w, http.StatusUnauthorized, "authentication failed")
 		return
 	}
@@ -103,6 +107,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "registration failed")
 		return
 	}
+	s.logger.Info("device registered", "environment", request.Environment)
 	writeJSON(w, http.StatusCreated, map[string]any{"status": "registered"})
 }
 
@@ -150,29 +155,41 @@ func (s *Server) notify(w http.ResponseWriter, r *http.Request) {
 	}
 	var request notificationRequest
 	if json.Unmarshal(body, &request) != nil || !validIdentity(request.RecipientID) || !validEventID(request.EventID) || (request.Kind != "message" && request.Kind != "invitation") {
+		s.logger.Info("notification rejected", "reason", "invalid request")
 		writeError(w, http.StatusBadRequest, "invalid notification request")
 		return
 	}
 	_, key, err := request.Card.Validate()
-	if err != nil || s.verifier.Verify(r, body, key) != nil {
+	if err == nil {
+		err = s.verifier.Verify(r, body, key)
+	}
+	if err != nil {
+		s.logger.Info("notification rejected", "reason", err.Error())
 		writeError(w, http.StatusUnauthorized, "authentication failed")
 		return
 	}
 	devices := s.devices.Devices(request.RecipientID)
+	sent, removed, failed := 0, 0, 0
 	for _, device := range devices {
 		err := s.push.Send(r.Context(), device, apns.Notification{EventID: request.EventID, Kind: request.Kind})
 		if err == nil {
+			sent++
 			continue
 		}
 		var failure *apns.Error
 		if errors.As(err, &failure) && failure.InvalidToken() {
+			removed++
+			s.logger.Warn("APNs rejected device token", "environment", device.Environment, "reason", err)
 			if removeErr := s.devices.Remove(request.RecipientID, device.Token); removeErr != nil {
 				s.logger.Error("invalid device cleanup failed", "error", removeErr)
 			}
 			continue
 		}
+		failed++
 		s.logger.Warn("APNs delivery failed", "reason", err)
 	}
+	s.logger.Info("notification processed", "kind", request.Kind, "devices", len(devices),
+		"sent", sent, "invalid_tokens", removed, "failed", failed)
 	writeJSON(w, http.StatusAccepted, map[string]any{"status": "accepted"})
 }
 
