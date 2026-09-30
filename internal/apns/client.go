@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/hiTechTeam/Shum-Push-Server/internal/store"
 )
@@ -24,6 +25,8 @@ import (
 type Notification struct {
 	EventID string
 	Kind    string
+	// Sender is the display name from the sender's signed card.
+	Sender string
 }
 
 type Client struct {
@@ -89,16 +92,20 @@ func newEnvironmentClient(keyID, teamID, keyFile string) (*environmentClient, er
 	}, nil
 }
 
-// Payload is the generic alert for an event. It never carries message text
-// or which reaction was chosen; the app fetches the event itself.
+// Payload names the sender and the kind of event. It never carries message
+// text or which reaction was chosen; the app fetches the event itself.
+// Invitations reuse a string every app version already has.
 func Payload(notification Notification) map[string]any {
 	body := "PUSH_NEW_MESSAGE_BODY"
-	if notification.Kind == "reaction" {
+	switch notification.Kind {
+	case "reaction":
 		body = "PUSH_NEW_REACTION_BODY"
+	case "invitation":
+		body = "Новое приглашение"
 	}
 	return map[string]any{
 		"aps": map[string]any{
-			"alert":             map[string]any{"title": "Shum", "loc-key": body},
+			"alert":             map[string]any{"title": senderTitle(notification.Sender), "loc-key": body},
 			"sound":             "default",
 			"content-available": 1,
 		},
@@ -173,3 +180,24 @@ func (c *environmentClient) providerToken() (string, error) {
 }
 
 func encode(value []byte) string { return base64.RawURLEncoding.EncodeToString(value) }
+
+// senderTitle keeps the sender's chosen name readable and bounded. Control and
+// text-direction characters could make a name look like someone else's.
+func senderTitle(name string) string {
+	var title strings.Builder
+	count := 0
+	for _, r := range strings.TrimSpace(name) {
+		if unicode.IsControl(r) || (r >= 0x202A && r <= 0x202E) || (r >= 0x2066 && r <= 0x2069) {
+			continue
+		}
+		if count == 64 {
+			break
+		}
+		title.WriteRune(r)
+		count++
+	}
+	if trimmed := strings.TrimSpace(title.String()); trimmed != "" {
+		return trimmed
+	}
+	return "Shum"
+}

@@ -171,7 +171,7 @@ func (s *Server) notify(w http.ResponseWriter, r *http.Request) {
 	devices := s.devices.Devices(request.RecipientID)
 	sent, removed, failed := 0, 0, 0
 	for _, device := range devices {
-		err := s.push.Send(r.Context(), device, apns.Notification{EventID: request.EventID, Kind: request.Kind})
+		err := s.push.Send(r.Context(), device, apns.Notification{EventID: request.EventID, Kind: request.Kind, Sender: request.Card.Name})
 		if err == nil {
 			sent++
 			continue

@@ -10,7 +10,7 @@ The server stores only the mapping between a Shum identity and its APNs device t
 - A notification request also includes the recipient identity, an event identifier, and the event kind (`message`, `invitation` or `reaction`). While handling the request, the server therefore knows which identity notified which. This relationship is not stored or logged.
 - The server never receives message text, attachments, photos, address books, or private keys.
 - The client IP address is kept in process memory only for rate limiting and is never written to disk or logs.
-- APNs payloads contain a generic localized alert, the event identifier, and the event kind, without message content or the chosen reaction. They never change the app icon badge.
+- APNs payloads contain the sender's display name from the signed card as the title, a generic localized body, the event identifier, and the event kind. They never carry message content or the chosen reaction and never change the app icon badge. The name is cleaned of control and text-direction characters and cut to 64 characters.
 - Device tokens are removed when the app deletes its profile or when APNs reports them as invalid.
 
 ## HTTP API
