@@ -89,16 +89,25 @@ func newEnvironmentClient(keyID, teamID, keyFile string) (*environmentClient, er
 	}, nil
 }
 
-func (c *Client) Send(ctx context.Context, device store.Device, notification Notification) error {
-	payload := map[string]any{
+// Payload is the generic alert for an event. It never carries message text
+// or which reaction was chosen; the app fetches the event itself.
+func Payload(notification Notification) map[string]any {
+	body := "PUSH_NEW_MESSAGE_BODY"
+	if notification.Kind == "reaction" {
+		body = "PUSH_NEW_REACTION_BODY"
+	}
+	return map[string]any{
 		"aps": map[string]any{
-			"alert":             map[string]any{"title": "Shum", "loc-key": "PUSH_NEW_MESSAGE_BODY"},
+			"alert":             map[string]any{"title": "Shum", "loc-key": body},
 			"sound":             "default",
 			"content-available": 1,
 		},
 		"shum": map[string]any{"event_id": notification.EventID, "kind": notification.Kind},
 	}
-	body, err := json.Marshal(payload)
+}
+
+func (c *Client) Send(ctx context.Context, device store.Device, notification Notification) error {
+	body, err := json.Marshal(Payload(notification))
 	if err != nil {
 		return err
 	}

@@ -154,7 +154,7 @@ func (s *Server) notify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var request notificationRequest
-	if json.Unmarshal(body, &request) != nil || !validIdentity(request.RecipientID) || !validEventID(request.EventID) || (request.Kind != "message" && request.Kind != "invitation") {
+	if json.Unmarshal(body, &request) != nil || !validIdentity(request.RecipientID) || !validEventID(request.EventID) || (request.Kind != "message" && request.Kind != "invitation" && request.Kind != "reaction") {
 		s.logger.Info("notification rejected", "reason", "invalid request")
 		writeError(w, http.StatusBadRequest, "invalid notification request")
 		return
