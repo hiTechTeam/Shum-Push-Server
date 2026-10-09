@@ -92,10 +92,21 @@ func newEnvironmentClient(keyID, teamID, keyFile string) (*environmentClient, er
 	}, nil
 }
 
+// Silent reports whether a kind only wakes the app. An answer to an invitation
+// (accepted or declined) has no fixed text: the app reads the answer and
+// decides what, if anything, to show.
+func Silent(kind string) bool {
+	return kind == "invitation_update"
+}
+
 // Payload names the sender and the kind of event. It never carries message
 // text or which reaction was chosen; the app fetches the event itself.
 // Invitations reuse a string every app version already has.
 func Payload(notification Notification) map[string]any {
+	routing := map[string]any{"event_id": notification.EventID, "kind": notification.Kind}
+	if Silent(notification.Kind) {
+		return map[string]any{"aps": map[string]any{"content-available": 1}, "shum": routing}
+	}
 	body := "PUSH_NEW_MESSAGE_BODY"
 	switch notification.Kind {
 	case "reaction":
@@ -109,7 +120,7 @@ func Payload(notification Notification) map[string]any {
 			"sound":             "default",
 			"content-available": 1,
 		},
-		"shum": map[string]any{"event_id": notification.EventID, "kind": notification.Kind},
+		"shum": routing,
 	}
 }
 
@@ -134,8 +145,14 @@ func (c *Client) Send(ctx context.Context, device store.Device, notification Not
 	}
 	req.Header.Set("authorization", "bearer "+token)
 	req.Header.Set("apns-topic", c.bundleID)
-	req.Header.Set("apns-push-type", "alert")
-	req.Header.Set("apns-priority", "10")
+	// APNs requires priority 5 for a push that only wakes the app.
+	if Silent(notification.Kind) {
+		req.Header.Set("apns-push-type", "background")
+		req.Header.Set("apns-priority", "5")
+	} else {
+		req.Header.Set("apns-push-type", "alert")
+		req.Header.Set("apns-priority", "10")
+	}
 	req.Header.Set("apns-expiration", fmt.Sprintf("%d", time.Now().Add(24*time.Hour).Unix()))
 	if notification.EventID != "" {
 		req.Header.Set("apns-collapse-id", notification.EventID)

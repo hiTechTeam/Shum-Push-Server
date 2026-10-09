@@ -27,6 +27,18 @@ func TestPayloadNamesTheSenderAndEventWithoutContent(t *testing.T) {
 	}
 }
 
+func TestInvitationUpdateOnlyWakesTheApp(t *testing.T) {
+	payload := Payload(Notification{EventID: "event-2", Kind: "invitation_update", Sender: "Аня"})
+	aps := payload["aps"].(map[string]any)
+	if len(aps) != 1 || aps["content-available"] != 1 {
+		t.Errorf("an invitation answer must be silent, got aps %v", aps)
+	}
+	shum := payload["shum"].(map[string]any)
+	if shum["event_id"] != "event-2" || shum["kind"] != "invitation_update" || len(shum) != 2 {
+		t.Errorf("unexpected routing data %v", shum)
+	}
+}
+
 func TestSenderTitleCannotImpersonateOrOverflow(t *testing.T) {
 	cases := map[string]string{
 		"  Аня  ":                  "Аня",

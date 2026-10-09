@@ -154,7 +154,7 @@ func (s *Server) notify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var request notificationRequest
-	if json.Unmarshal(body, &request) != nil || !validIdentity(request.RecipientID) || !validEventID(request.EventID) || (request.Kind != "message" && request.Kind != "invitation" && request.Kind != "reaction") {
+	if json.Unmarshal(body, &request) != nil || !validIdentity(request.RecipientID) || !validEventID(request.EventID) || !validKind(request.Kind) {
 		s.logger.Info("notification rejected", "reason", "invalid request")
 		writeError(w, http.StatusBadRequest, "invalid notification request")
 		return
@@ -191,6 +191,14 @@ func (s *Server) notify(w http.ResponseWriter, r *http.Request) {
 	s.logger.Info("notification processed", "kind", request.Kind, "devices", len(devices),
 		"sent", sent, "invalid_tokens", removed, "failed", failed)
 	writeJSON(w, http.StatusAccepted, map[string]any{"status": "accepted"})
+}
+
+func validKind(kind string) bool {
+	switch kind {
+	case "message", "invitation", "invitation_update", "reaction":
+		return true
+	}
+	return false
 }
 
 func (s *Server) allowGateway(r *http.Request) bool {
